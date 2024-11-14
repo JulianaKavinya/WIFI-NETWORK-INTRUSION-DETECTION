@@ -1,0 +1,7 @@
+.weather-widget {
+    border: 1px solid #ccc;
+    padding: 20px;
+    text-align: center;
+    width: 200px;
+    margin: 0 auto;
+}

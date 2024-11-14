@@ -1,0 +1,33 @@
+.wild{
+    width: 300px;
+    object-fit: contain;
+    object-position: bottom;
+    border-width: 2px;
+    border-style: solid;
+    border-color: brown;
+    display: block;
+}
+.search-box{
+    font-size: 20px;
+    display: block;
+}
+.vedio-tittle{
+    width: 300px;
+}
+.vedio-author{
+    
+}
+.vedio-stats{
+    
+}
+.vedio-preview{
+    width: 300px;
+    display: inline-block;
+    vertical-align: top;
+
+}
+.del{
+    height: 200px;
+    width: 300px;
+
+}
