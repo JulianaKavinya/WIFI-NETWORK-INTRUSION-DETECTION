@@ -1,0 +1,24 @@
+const sendSms = async (mac, ip) => {
+    try {
+        console.log('Sending SMS with MAC:', mac, 'and IP:', ip);
+        
+        const response = await axios.post('https://api.africastalking.com/version1/messaging', null, {
+            headers: {
+                'Content-Type': 'application/x-www-form-urlencoded',
+                'apikey': API_KEY,
+            },
+            params: {
+                username: Juliana Safari,
+                to: '+254758392102',
+                message: `New Device Detected! MAC: ${mac}, IP: ${ip}`,
+                bulkSMSMode: 1,
+            },
+        });
+
+        console.log('SMS sent successfully:', response.data);
+        return response.data;
+    } catch (error) {
+        console.error('Failed to send SMS:', error.response ? error.response.data : error.message);
+        throw error;
+    }
+};
