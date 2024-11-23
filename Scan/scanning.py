@@ -1,3 +1,4 @@
+import sqlite3
 from scapy.all import ARP, Ether, srp
 
 def scan_network():
