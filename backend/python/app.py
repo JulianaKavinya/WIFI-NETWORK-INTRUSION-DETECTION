@@ -1,6 +1,7 @@
 from flask import Flask, request, jsonify
 from scanning import scan_network, process_devices
 from sms import send_sms
+from database.database_manager import get_db_connection, insert_device
 import sqlite3
 
 app = Flask(__name__)
@@ -8,21 +9,29 @@ app = Flask(__name__)
 # Database file location
 DATABASE = "D:\\Projects\\WIFI-NETWORK-INTRUSION-DETECTION\\database\\network_monitor.db"
 
-def get_db_connection():
-    """Create and return a SQLite database connection."""
-    conn = sqlite3.connect(DATABASE)
-    conn.row_factory = sqlite3.Row
-    return conn
+@app.route('/')
+def home():
+    return "Welcome to the WiFi Network Intrusion Detection System!"
+
+@app.route('/favicon.ico')
+def favicon():
+    return '', 204  # No content for favicon
 
 @app.route('/scan', methods=['GET'])
 def scan():
     """Scan the network and save devices to the database."""
     devices = scan_network()
     for device in devices:
+        # Process each device
         process_devices(device['ip'], device['mac'])
-        # Replace '+254XXXXXXXXX' with the actual phone number to notify
-        send_sms(f"New device detected: {device['ip']} - {device['mac']}", "+254XXXXXXXXX")
-    return jsonify(devices)
+        
+        # Send SMS notification for each device detected
+        try:
+            send_sms(f"New device detected: {device['ip']} - {device['mac']}", "+254XXXXXXXXX")
+        except Exception as e:
+            return jsonify({"error": f"Failed to send SMS: {str(e)}"}), 500
+
+    return jsonify(devices), 200
 
 @app.route('/add-device', methods=['POST'])
 def add_device():
@@ -57,9 +66,10 @@ def get_devices():
 
     # Convert devices to a list of dictionaries
     devices_list = [dict(device) for device in devices]
-    return jsonify(devices_list)
+    return jsonify(devices_list), 200
 
 if __name__ == "__main__":
-    # Update the port to 5000 for Flask
+    # Run the Flask app on port 5000
     app.run(debug=True, port=5000)
 
+print("Available Routes:", app.url_map)
