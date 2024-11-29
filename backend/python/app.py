@@ -17,24 +17,59 @@ def home():
 def favicon():
     return '', 204  # No content for favicon
 
+@app.route('/someendpoint', methods=['POST'])
+def some_function():
+    data = request.form.get('some_key')  # This might return None if 'some_key' is not in the form
+    print(f"Data received: {data}")  # Check the value of 'data'
+    if data is None:
+        return 'Error: No data provided', 400
+    # Continue processing if data is not None
+
+@app.route('/api', methods=['GET'])
+def api_function():
+    response = some_api_call()  # This might return None
+    if response is None:
+        return 'API Error: No data received', 500
+
+    # Safe to process response since it's not None
+    result = response.get('key')  # Example: Accessing data
+    return jsonify(result)
+
 @app.route('/scan', methods=['GET'])
 def scan():
     """Scan the network and save devices to the database."""
     devices = scan_network()
+
+    if not devices:
+        return jsonify({"message": "No devices found."}), 200
+    return jsonify(devices), 200
+
+ # Process each detected device
     for device in devices:
-        # Process each device
-        process_devices(device['ip'], device['mac'])
+        # Insert the device into the database if it doesn't exist
+        conn = get_db_connection()
+        cursor = conn.cursor()
+        cursor.execute("SELECT * FROM devices WHERE mac = ?", (device['mac'],))
+        existing_device = cursor.fetchone()
         
-        # Send SMS notification for each device detected
+        if not existing_device:  # If device does not already exist in the database
+            cursor.execute("INSERT INTO devices (mac, name, authorized) VALUES (?, ?, ?)",
+                           (device['mac'], device['name'], 1))
+            conn.commit()
+        
+        conn.close()
+
+        # Optionally send an SMS for each detected device
         try:
             send_sms(f"New device detected: {device['ip']} - {device['mac']}", "+254XXXXXXXXX")
         except Exception as e:
             return jsonify({"error": f"Failed to send SMS: {str(e)}"}), 500
 
-    return jsonify(devices), 200
+    return jsonify(devices), 200   
 
 @app.route('/add-device', methods=['POST'])
 def add_device():
+    print("POST request to /add-device")
     """Add a device to the database."""
     data = request.json
     mac = data.get('mac')
