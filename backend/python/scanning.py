@@ -1,24 +1,32 @@
 import sqlite3
-from scapy.all import ARP, Ether, sr1
+from scapy.all import ARP, Ether, srp
 from database.database_manager import insert_device, is_device_whitelisted
 import requests
 
 def scan_network():
     devices = []
-    arp_request = ARP(pdst="192.168.1.1/24")
+    # Define the target IP range (replace with your network range if needed)
+    target_ip = "192.168.1.1/24"
+    
+    # Create an ARP request packet
+    arp_request = ARP(pdst=target_ip)
+    # Create an Ethernet frame to broadcast the ARP request
     broadcast = Ether(dst="ff:ff:ff:ff:ff:ff")
+    # Combine the Ethernet frame and ARP request
     arp_request_broadcast = broadcast / arp_request
-    answered_list = sr1(arp_request_broadcast, timeout=1, verbose=False)
 
-    # Check if we got a response
-    if answered_list is None:
-        print("No response received")
-        return devices  # Return an empty list if no devices responded
+    try:
+        # Send the packet and capture responses
+        answered_list = srp(arp_request_broadcast, timeout=2, verbose=False)[0]
+    except Exception as e:
+        print(f"Error during network scan: {str(e)}")
+        return devices  # Return an empty list if an error occurs
 
-
-    for element in answered_list:
-        device = {"ip": element[1].psrc, "mac": element[1].hwsrc}
+    # Process the responses
+    for sent, received in answered_list:
+        device = {"ip": received.psrc, "mac": received.hwsrc}
         devices.append(device)
+    
     return devices
 
 def process_devices():
@@ -27,6 +35,14 @@ def process_devices():
         if not is_device_whitelisted(device["mac"]):
             # Log unauthorized devices
             insert_device(device["ip"], device["mac"], authorized=False)
+            
             # Trigger SMS alert
-            data = {"message": f"Unauthorized device: {device['ip']} ({device['mac']})", "phoneNumber": "admin_number"}
-            requests.post("http://localhost:3000/api/alerts", json=data)
+            alert_message = {
+                "message": f"Unauthorized device detected: IP={device['ip']}, MAC={device['mac']}",
+                "phoneNumber": "admin_number"  # Replace with actual admin phone number
+            }
+            try:
+                response = requests.post("http://localhost:3000/api/alerts", json=alert_message)
+                response.raise_for_status()  # Raise an error for unsuccessful HTTP responses
+            except requests.RequestException as e:
+                print(f"Failed to send SMS alert: {str(e)}")

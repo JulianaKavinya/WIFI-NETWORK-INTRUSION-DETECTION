@@ -16,10 +16,21 @@ function Dashboard() {
 
     // Fetch detection logs
     axios
-      .get("http://localhost:5000/logs") // Replace '/logs' if your endpoint name is different
+      .get("http://localhost:5000/logs")
       .then((response) => setLogs(response.data))
       .catch((error) => console.error("Error fetching logs:", error));
-  }, []);
+
+    // Setup WebSocket for real-time updates (if your backend supports it)
+    const eventSource = new EventSource("http://localhost:5000/stream-updates");
+    eventSource.onmessage = function(event) {
+      console.log("Received event", event.data);
+      
+    };
+
+    return () => {
+      eventSource.close();
+    };
+  }, [knownDevices]);
 
   // Add a device to the whitelist
   const addDevice = () => {
@@ -66,7 +77,6 @@ function Dashboard() {
       .post("http://localhost:5000/allow", { mac })
       .then(() => {
         alert(`Device with MAC ${mac} has been allowed.`);
-        // Optional: Refresh devices or handle UI changes
       })
       .catch((error) => console.error("Error allowing device:", error));
   };
