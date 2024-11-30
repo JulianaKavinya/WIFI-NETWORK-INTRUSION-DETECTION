@@ -1,12 +1,26 @@
-const AfricasTalking = require('africastalking')({
+// services/africastalkingService.js
+
+const AfricasTalking = require('africastalking');
+// Load environment variables from .env file
+require('dotenv').config();
+
+
+// Initialize AfricasTalking with your credentials
+const africasTalking = AfricasTalking({
     apiKey: process.env.AFRICASTALKING_API_KEY,
     username: process.env.AFRICASTALKING_USERNAME,
 });
 
-const sms = AfricasTalking.SMS;
+const sms = africasTalking.SMS;
 
+// Function to send SMS
 const sendSMS = async (message, phoneNumber) => {
-    return await sms.send({ to: [phoneNumber], message });
+    try {
+        const response = await sms.send({ to: [phoneNumber], message });
+        return response;
+    } catch (error) {
+        throw new Error(error.message);
+    }
 };
 
 module.exports = { sendSMS };

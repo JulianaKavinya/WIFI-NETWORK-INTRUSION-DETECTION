@@ -6,7 +6,7 @@ import requests
 def scan_network():
     devices = []
     # Define the target IP range (replace with your network range if needed)
-    target_ip = "192.168.1.1/24"
+    target_ip = "192.168.137.1"
     
     # Create an ARP request packet
     arp_request = ARP(pdst=target_ip)
